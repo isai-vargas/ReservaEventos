@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+def osName = org.gradle.internal.os.OperatingSystem.current().toString().toLowerCase()
+def jfxPlatform = osName.contains("windows") ? "win" : (osName.contains("mac") ? "mac" : "linux")
+
+dependencies {
+    implementation "org.openjfx:javafx-controls:20.0.2:${jfxPlatform}"
+    implementation "org.openjfx:javafx-fxml:20.0.2:${jfxPlatform}"
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+application {
+    mainClass = 'org.example.Main' // Reemplaza con el nombre de tu clase principal
+}
+
+test {
+    useJUnitPlatform()
+}
