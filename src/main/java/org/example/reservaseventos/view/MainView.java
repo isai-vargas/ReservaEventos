@@ -20,6 +20,8 @@ public class MainView extends JFrame {
     private JTextField txtUsuarioReserva;
     private JTextArea txtReservasRecientes;
     private JTextArea txtReservasPendientes;
+    private JComboBox<Reserva> comboBoxReservasRecientes;
+    private JComboBox<Reserva> comboBoxReservasPendientes;
 
     public MainView(EventoController eventoController, ReservaController reservaController) {
         this.eventoController = eventoController;
@@ -34,19 +36,19 @@ public class MainView extends JFrame {
         setLayout(new BorderLayout());
 
         JPanel panelFormulario = new JPanel(new GridLayout(5, 2));
-        panelFormulario.add(new JLabel("Nombre del Evento:"));
+        panelFormulario.add(new JLabel("Nombre del Evento: "));
         txtNombreEvento = new JTextField();
         panelFormulario.add(txtNombreEvento);
 
-        panelFormulario.add(new JLabel("Fecha del Evento:"));
+        panelFormulario.add(new JLabel("Fecha del Evento: "));
         txtFechaEvento = new JTextField();
         panelFormulario.add(txtFechaEvento);
 
-        panelFormulario.add(new JLabel("Lugar del Evento:"));
+        panelFormulario.add(new JLabel("Lugar del Evento: "));
         txtLugarEvento = new JTextField();
         panelFormulario.add(txtLugarEvento);
 
-        panelFormulario.add(new JLabel("Usuario para Reserva:"));
+        panelFormulario.add(new JLabel("Usuario para Reserva: "));
         txtUsuarioReserva = new JTextField();
         panelFormulario.add(txtUsuarioReserva);
 
@@ -59,32 +61,39 @@ public class MainView extends JFrame {
             }
         });
 
-        JButton btnEliminarReciente = new JButton("Eliminar Última Reserva");
-        panelFormulario.add(btnEliminarReciente);
-        btnEliminarReciente.addActionListener(new ActionListener() {
+        add(panelFormulario, BorderLayout.NORTH);
+
+        JPanel panelReservas = new JPanel(new GridLayout(1, 2));
+        txtReservasRecientes = new JTextArea();
+        txtReservasPendientes = new JTextArea();
+        comboBoxReservasRecientes = new JComboBox<>();
+        comboBoxReservasPendientes = new JComboBox<>();
+
+        panelReservas.add(new JScrollPane(txtReservasRecientes));
+        panelReservas.add(new JScrollPane(txtReservasPendientes));
+        add(panelReservas, BorderLayout.CENTER);
+
+        JPanel panelBotones = new JPanel();
+        JButton btnEliminarLIFO = new JButton("Eliminar de LIFO");
+        JButton btnEliminarFIFO = new JButton("Eliminar de FIFO");
+
+        btnEliminarLIFO.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 eliminarReservaReciente();
             }
         });
 
-        JButton btnConfirmarPendiente = new JButton("Confirmar Reserva Pendiente");
-        panelFormulario.add(btnConfirmarPendiente);
-        btnConfirmarPendiente.addActionListener(new ActionListener() {
+        btnEliminarFIFO.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                confirmarReservaPendiente();
+                eliminarReservaPendiente();
             }
         });
 
-        add(panelFormulario, BorderLayout.NORTH);
-
-        JPanel panelReservas = new JPanel(new GridLayout(1, 2));
-        txtReservasRecientes = new JTextArea();
-        txtReservasPendientes = new JTextArea();
-        panelReservas.add(new JScrollPane(txtReservasRecientes));
-        panelReservas.add(new JScrollPane(txtReservasPendientes));
-        add(panelReservas, BorderLayout.CENTER);
+        panelBotones.add(btnEliminarLIFO);
+        panelBotones.add(btnEliminarFIFO);
+        add(panelBotones, BorderLayout.SOUTH);
 
         actualizarListasDeReservas();
     }
@@ -99,7 +108,7 @@ public class MainView extends JFrame {
         Reserva reserva = new Reserva(evento, usuario, false);
 
         eventoController.agregarEvento(evento);
-        reservaController.agregarReserva(reserva); // Agregar a reservas recientes y pendientes
+        reservaController.agregarReserva(reserva);
 
         txtNombreEvento.setText("");
         txtFechaEvento.setText("");
@@ -107,6 +116,22 @@ public class MainView extends JFrame {
         txtUsuarioReserva.setText("");
 
         actualizarListasDeReservas();
+    }
+
+    private void actualizarListasDeReservas() {
+        StringBuilder reservasRecientes = new StringBuilder("LIFO (Pila):\n");
+        for (Reserva reserva : reservaController.getReservasRecientes()) {
+            reservasRecientes.append(reserva.getEvento().mostrarInfo()).append(" - ").append(reserva.getUsuario()).append("\n");
+            comboBoxReservasRecientes.addItem(reserva);
+        }
+        txtReservasRecientes.setText(reservasRecientes.toString());
+
+        StringBuilder reservasPendientes = new StringBuilder("FIFO (Cola):\n");
+        for (Reserva reserva : reservaController.getReservasPendientes()) {
+            reservasPendientes.append(reserva.getEvento().mostrarInfo()).append(" - ").append(reserva.getUsuario()).append("\n");
+            comboBoxReservasPendientes.addItem(reserva);
+        }
+        txtReservasPendientes.setText(reservasPendientes.toString());
     }
 
     private void eliminarReservaReciente() {
@@ -119,28 +144,14 @@ public class MainView extends JFrame {
         actualizarListasDeReservas();
     }
 
-    private void confirmarReservaPendiente() {
-        Reserva reservaConfirmada = reservaController.confirmarReservaPendiente();
-        if (reservaConfirmada != null) {
-            JOptionPane.showMessageDialog(this, "Reserva pendiente confirmada: " + reservaConfirmada.getEvento().mostrarInfo());
+    private void eliminarReservaPendiente() {
+        Reserva reservaEliminada = reservaController.confirmarReservaPendiente();
+        if (reservaEliminada != null) {
+            JOptionPane.showMessageDialog(this, "Reserva pendiente eliminada: " + reservaEliminada.getEvento().mostrarInfo());
         } else {
-            JOptionPane.showMessageDialog(this, "No hay reservas pendientes para confirmar.");
+            JOptionPane.showMessageDialog(this, "No hay reservas pendientes para eliminar.");
         }
         actualizarListasDeReservas();
-    }
-
-    private void actualizarListasDeReservas() {
-        StringBuilder reservasRecientes = new StringBuilder("Reservas Recientes:\n");
-        for (Reserva reserva : reservaController.getReservasRecientes()) {
-            reservasRecientes.append(reserva.getEvento().mostrarInfo()).append(" - ").append(reserva.getUsuario()).append("\n");
-        }
-        txtReservasRecientes.setText(reservasRecientes.toString());
-
-        StringBuilder reservasPendientes = new StringBuilder("Reservas Pendientes:\n");
-        for (Reserva reserva : reservaController.getReservasPendientes()) {
-            reservasPendientes.append(reserva.getEvento().mostrarInfo()).append(" - ").append(reserva.getUsuario()).append("\n");
-        }
-        txtReservasPendientes.setText(reservasPendientes.toString());
     }
 
     public static void main(String[] args) {
